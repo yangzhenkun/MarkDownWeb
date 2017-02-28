@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="UTF-8">
+		<title>markdown编辑器</title>
+		<script src="js/jquery-1.9.0.min.js"></script>
+		<script src="js/ace/ace.js"></script>
+		<script src="js/marked.js"></script>
+		<link href="css/markdown.css" rel="stylesheet" />
+		<script src="js/showPanel.js"></script>
+
+		<style type="text/css">
+			* {
+				margin: 0;
+				padding: 0;
+				outline: none;
+				border-radius: 0;
+			}
+			
+			html,
+			body {
+				width: 100%;
+				height: 100%;
+				font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+				background-color: #ebebeb;
+			}
+			
+			#bar {
+				height: 130px;
+				width: 100%;
+				color: #fff;
+			}
+			
+			#bar #topbar {
+				height: 40px;
+				background-color: #444;
+				width: 100%;
+				color: #fff;
+				line-height: 50px;
+			}
+			
+			#bar #czbar {
+				height: 50px;
+				background-color: #FFFFFF;
+				width: 100%;
+				color: #fff;
+				line-height: 50px;
+			}
+			
+			#bar #toolbar {
+				height: 40px;
+				background-color: #AAAAAA;
+				width: 100%;
+				color: #fff;
+				line-height: 50px;
+			}
+			
+			#container {
+				overflow: auto;
+				position: absolute;
+				bottom: 0;
+				left: 0;
+				right: 0;
+				top: 130px;
+			}
+			
+			#editor-column,
+			#preview-column {
+				width: 49.5%;
+				height: 100%;
+				overflow: auto;
+				position: relative;
+				background-color: #F6F6F6;
+			}
+			
+			.pull-left {
+				float: left;
+			}
+			
+			.pull-right {
+				float: right;
+			}
+			
+			#toolbar img {
+				width: 25px;
+				height: 25px;
+				padding-top: 8px;
+				padding-bottom: 7px;
+				margin-left: 10px;
+			}
+			
+			#toolbar img:hover {
+				background: #EBEBEB;
+				cursor: pointer;
+			}
+			
+			#commit {
+				color: #FFFFFF;
+				padding: 5px 15px;
+				background: #BE1A21;
+				border: 0px none #FFECEC;
+			}
+			
+			#commit:hover {
+				cursor: pointer;
+				background: #CB474D;
+			}
+			
+			#dialog{
+				position: fixed;
+				height: 400px;
+				width: 550px;
+				background: #FFFFFF;
+				z-index: 5;
+				left: 30%;
+				border: 1px solid gray;
+				top: 25%;
+				display: none;
+			}
+			
+			#showImg{
+				height: 160px;
+				width: 160px;
+				position: absolute;
+				border: 0.5px solid gainsboro;
+				bottom: 80px;
+				left:35%;
+			}
+			
+			#cancel{
+				border: 0px none #FFECEC;
+				background: #999999;
+				color: #FFFFFF;
+				padding: 5px 15px;
+				position: absolute;
+				top: 8px;
+				right: 100px;
+			}
+			
+			#cancel:hover{
+				background: #AAAAAA;	
+			}
+			
+			#insert{
+				border: 0px none #FFECEC;
+				background: #BE1A21;
+				color: #FFFFFF;
+				padding: 5px 15px;
+				position: absolute;
+				top: 8px;
+				right: 30px;
+			}
+			
+			#insert:hover{
+				background: #CB474D;
+			}
+			
+			#upload{
+				border: 0px none #FFECEC;
+				background: #999999;
+				color: #FFFFFF;
+				padding: 7px 30px;
+				position: absolute;
+				top: 67px;
+				right: 40px;
+			}
+			
+			#upload:hover{
+				background: #AAAAAA;	
+			}
+			
+			#filediv{
+				width: 70%;
+				height: 30px;
+				top: 70px;
+				left: 20px;
+				position: absolute;
+				
+			}
+			
+			#file{
+				width: 95%;
+				height: 30px;
+				position: relative;
+				top: -27px;
+				opacity: 0.000001;
+				cursor: pointer;
+			}
+			
+			
+		</style>
+		
+		<script>
+			$(function(){
+				$('#dialog').hide();
+			})
+			
+			
+		</script>
+	</head>
+
+	<body>
+		<div id='bar'>
+			<div id="topbar">
+
+			</div>
+			<div id="czbar">
+				<input style="font-size: 26px;width: 80%;padding-left: 10px;border: 0px none #FFFFFF;padding-top: 5px;" type="text" value="文章标题" placeholder="文章标题" />
+				<select id="group">
+					<option value="volvo">android</option>
+					<option value="saab">算法</option>
+					<option value="opel">java思想</option>
+					<option value="audi">web</option>
+				</select>
+
+				<button id="commit">发表博客</button>
+
+			</div>
+			<div id="toolbar">
+				<img src="img/bold.png" id="bold" onclick="insertText('**这里填写要加粗的文字**')"/>
+				<img src="img/italic.png" id="italic" onclick="insertText('_这里填写要斜体的文字_')"/>
+				<img src="img/hyperlink.png" id="hyperlink" onclick="insertText('[这里写连接的描述](这里填写连接地址)')"/>
+				<img src="img/code.png" id="code" onclick="insertText('```\n这里插入代码\n```')"/>
+				<img src="img/image.png" id="image" onclick="showDialog()"/>
+			</div>
+
+		</div>
+		<div id='container'>
+			<div id='editor-column' class='pull-left'>
+				<div id='panel-editor' style="height: 100%;">
+					<!--编辑区-->
+					<div class="editor-content" id="mdeditor" style="height: 100%;"></div>
+
+				</div>
+			</div>
+			<div id='preview-column' class='pull-right'>
+				<div id='panel-preview'>
+					<!--显示区-->
+					<div id="preview" class="markdown-body"></div>
+
+				</div>
+			</div>
+			
+			<div id="dialog">
+				<div style="position: absolute;height: 40px;width: 100%;background: #FFFFFF;border-bottom: 1px solid gray;">
+					<span style="position: absolute;left: 10px;top: 10px;color: gray;">插入图片</span>
+					<img src="img/X.png" style="height: 25px;width: 25px;position: absolute;right: 10px;top: 10px;cursor: pointer;" onclick="f_cancel()"/>
+				</div>
+				
+				<div>
+					<div id="filediv">
+						<span style="background: gray;color: #FFFFFF;padding: 6px 10px;">选择图片</span>
+						<input type="text" id="fileName" style="height: 25px;width: 70%;"/>
+						
+						<input type="file" id="file" name="file" onchange="setFile()"/>
+					</div>
+					<button id="upload" onclick="uploadFile()">上传</button>
+				</div>
+				
+				<img  id="showImg"/>
+				
+				<div style="position: absolute;bottom: 1px;width: 100%;height: 40px;border-top: 1px solid gray;">
+					<button id="cancel" onclick="f_cancel()">取消</button>
+					<button id="insert" onclick="insert()">插入</button>
+				</div>
+			</div>
+			
+			<script>
+				var imgUrl='';//上传图片返回的url
+			
+				var acen_edit = ace.edit('mdeditor');//左侧编辑框
+				acen_edit.setTheme('ace/theme/chrome');
+				acen_edit.getSession().setMode('ace/mode/markdown');
+				acen_edit.renderer.setShowPrintMargin(false);
+				$("#mdeditor").keyup(function() {//给左侧编辑框添加事件，，当键盘抬起时，右侧实时显示左侧的md内容
+					$("#preview").html(marked(acen_edit.getValue()));
+				});
+				
+
+				function f_commit() {
+					console.log($('#group').val());
+				}
+				//DownPanel是我自己写的一个提示，当鼠标移到该dom上，回显示相关提示
+				$('#bold').DownPanel({
+					render: '<span style="color:#ffffff;">加粗</span>',
+					background: '#000000',
+					top: ($('#bold').offset().top + 40),
+					left: ($('#bold').offset().left)
+				});
+				$('#code').DownPanel({
+					render: '<span style="color:#ffffff;">插入代码</span>',
+					background: '#000000',
+					top: ($('#code').offset().top + 40),
+					left: ($('#code').offset().left)
+				});
+				$('#hyperlink').DownPanel({
+					render: '<span style="color:#ffffff;">插入超链接</span>',
+					background: '#000000',
+					top: ($('#hyperlink').offset().top + 40),
+					left: ($('#hyperlink').offset().left)
+				});
+				$('#image').DownPanel({
+					render: '<span style="color:#ffffff;">插入图片</span>',
+					background: '#000000',
+					top: ($('#image').offset().top + 40),
+					left: ($('#image').offset().left)
+				});
+				$('#italic').DownPanel({
+					render: '<span style="color:#ffffff;">斜体</span>',
+					background: '#000000',
+					top: ($('#italic').offset().top + 40),
+					left: ($('#italic').offset().left)
+				});
+				
+				//左侧插入，用户插入一些特定方法
+				function insertText(val) {
+					acen_edit.insert(val); //光标位置插入
+				}
+				
+				//选择图片后，用于显示图片路径
+				function setFile(){
+					$('#fileName').val($('#file').val());
+				}
+				
+				//上传图片到服务器，返回图片地址
+				function uploadFile(){
+					imgUrl='https://ss0.bdstatic.com/5aV1bjqh_Q23odCf/static/superman/img/logo/logo_white.png';
+					$('#showImg').attr('src','https://ss0.bdstatic.com/5aV1bjqh_Q23odCf/static/superman/img/logo/logo_white.png');
+				}
+				
+				//插入图片弹窗取消
+				function f_cancel(){
+					$('#dialog').hide();
+				}
+				
+				//插入图片
+				function insert(){
+					$('#dialog').hide();
+					insertText('![这里写图片描述]('+imgUrl+')')
+				}
+				
+				//显示弹窗
+				function showDialog(){
+					$('#dialog').show();
+				}
+				
+			</script>
+	</body>
+
+</html>
